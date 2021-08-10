@@ -1,0 +1,545 @@
+---
+title: "CS5801 Coursework "
+author: "2045939"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_notebook
+version: 1.0
+---
+
+# 0. Instructions 
+```{r}
+# Add code here to load any required libraries with `library()`.  
+# We suggest you use `install.package()` for any required packages externally to this document 
+# since installation only need be done once.
+library(ggplot2)
+library(tidyverse)
+```
+
+# 1. Organise and clean the data
+
+## 1.1 Subset the data into the specific dataset allocated
+ 
+```{r}
+# Code to select the student specific team combination.  
+# Feel free to change it including the data frame name.
+my2teams.df <- subset(CS5801.data, teamID.x=="NYN" | teamID.x=="KCA")
+```
+```{r}
+#now to check that only these two teams are in the new data frame
+view(my2teams.df)
+```
+
+
+## 1.2 Data quality analysis
+ 
+### To assess the quality of the new data frame, the variables need to be summarised. Additionally, the data type of each variable needs to be explored to ensure that there are no issues with the data. 
+```{r}
+summary(my2teams.df)
+str(my2teams.df)
+```
+
+### Now that the summary and data type of the variables are known, the variables can be checked individualy to assess data quality and to pick up any issues visible. 
+* playerID:  charcater variable- Player ID code
+* teamID.x: factor variable with 149 levels coding Team ID, however we only need to code it for "NYN" and "KCA" so we can adjust our code
+* G: Games- integer value specifying the number of games in which a player played with a minimum of 4 games and max of 161 games
+* R: Runs- integer variable specifying how many runs a player has accomplished, with range from -85 to 101. However, since runs can not be -85 as they start from 0, there is a mistake in this data column due to human error. It can be rectified by changing it to 0, NA, or positive 85. 
+* H: Hits- integer variable showing the times reached base because of a batted, fair ball without error by the defense with a range from 0 to 178 hits.
+* AB: At bat- integer variable of how many times a player is at bat ranging from 0 to 623 at bats 
+* RBI: Runs Batted In- integer variable showing how many runs a player has batted in, ranging from -2 to 106. However, since RBI can not be -2 as they start from 0, there is a mistake in this data column due to human error. It can be rectified by changing it to 0, NA, or positive 2. 
+* weight: Player's weight in pounds- integer variable ranging from 80 to 285. However, after viewing the dataset, there is one individual with a weight of 80 whereas everyone starts with 165. Therefore there is a mistake due to human error. It can be rectified by changing it to NA or 185.
+* height: Player's height in inches- integer variable ranging from 38 to 82 inches. However, after viewing the dataset, there are two individuals with heights of 38 and 42 inches whereas everyone starts with 69 inches. Those to individuals would be around the height of 3ft1in to 3ft5in, which are extremely short players for major league baseball. Therefore there is a mistake due to human error. It can be rectified by changing it to NA.
+* salary: The salary of the player- numerical variable ranging from $509,125 to $20,000,000
+* birthdate: The date of birth of the player- date format from 1973 to 1991
+* career.length: The career length of the player in years-numerical from 0.334 years to 38.441 years 
+* bats: Whether they bat with their Left (L) or Right (R) hand- categorical variable with 3 levels, L- left, R-Right, and B-both
+* age: The age of the player, numercal ranging from 23 to 41 years of age. However it doesn't mathc...???
+* hit.ind: numerical value showing that it will be 1 if the player has made at least one hit in the 2015 season and 0 if they have not. However, this should be a binary variable with 1 and 0 coded respectively. The data type of this variable and the coding needs to be rectified. 
+ 
+ 
+## 1.3 Data cleaning  
+ 
+### The Data Quality issues found will be written, justified, and changed below in order of urgency. Firstly, all data types that need to converted and data that needs to be removed or changed will be first. Following that, any additional data quality issues that arent a priority will be addressed. 
+* runs variable: Don't need to change the data type but runs can not be negative and there is only one value that is a negative number (the rest being 0 and up) therefore the value of -85 is invalid and will need changing. It can be changed to either 85 or NA or 0 as this is a result of human error
+```{r}
+my2teams.df$R <- replace(my2teams.df$R,my2teams.df$R<0, NA )
+my2teams.df$R
+# now to check if the the value has been changed to NA
+view(my2teams.df)
+# The -85 has been changed to NA, and now we can change it to 85
+```
+```{r}
+my2teams.df$R[is.na(my2teams.df$R)]=85
+my2teams.df$R
+# now to check if the the value has been changed to 85
+view(my2teams.df)
+```
+
+* RBI variable: don't need to change the data type by RBI can not be negative and there is only one value that is a negative number (the rest being 0 and up) therefore the value of -2 is invalid and will need changing. It can be changed to either 2, NA, or 0 as this is a result of human error 
+```{r}
+my2teams.df$RBI <- replace(my2teams.df$RBI,my2teams.df$RBI<0, NA )
+my2teams.df$RBI
+# now to check if the the value has been changed to NA
+view(my2teams.df)
+# The -2 has been changed to NA, and now we can change it to 85
+```
+```{r}
+my2teams.df$RBI[is.na(my2teams.df$RBI)]=2
+my2teams.df$RBI
+# now to check if the the value has been changed to 85
+view(my2teams.df)
+```
+
+* weight variable: After viewing the data, we can see that other than the '80' data point, all other weights are 165 and above suggesting that there is a mistake in the data set and that 80 is the wrong number. Can be fixed by making that value the mean of the weight
+```{r}
+my2teams.df$weight <- replace(my2teams.df$weight,my2teams.df$weight<160, NA )
+my2teams.df$weight
+# now to check if the the value has been changed to NA
+view(my2teams.df)
+# The 80 has been changed to NA, and now we can change it to 85
+```
+```{r}
+my2teams.df$weight[is.na(my2teams.df$weight)] <- mean(my2teams.df$weight, na.rm = TRUE)
+my2teams.df$weight
+# now to check if the the value has been changed to 85
+view(my2teams.df)
+```
+
+* height variable: After viewing the data, two data points are extreme outliers "38" and "42", whereas the rest of the players are 69 inches and above suggesting that there is a mistake in the data set. Can be fixed by making that value the mean of the height
+```{r}
+my2teams.df$height <- replace(my2teams.df$height,my2teams.df$height<65, NA )
+my2teams.df$height
+# now to check if the the values has been changed to NA
+view(my2teams.df)
+# The outliers has been changed to NA, and now we can change it to the mean
+```
+
+```{r}
+my2teams.df$height[is.na(my2teams.df$height)] <- mean(my2teams.df$height, na.rm = TRUE)
+my2teams.df$height
+# now to check if the the values has been changed to the mean
+view(my2teams.df)
+```
+
+* hit.ind: data type should be binary with 0 coding for they have not made any hit in the 2015 season and 1 coding for if they have made atleast one hit. 
+```{r}
+my2teams.df$hit.ind <- as.factor(my2teams.df$hit.ind)
+str(my2teams.df$hit.ind)
+view(my2teams.df)
+```
+
+# 2. Exploratory Data Analysis (EDA)
+
+## 2.1 EDA plan
+
+### Exploratory Data Analysis (EDA) is a vital part of conducting research on data. It is used to see what encompasses each variable and how to numerically and visually percieve the data. Firstly, all the data will undergo a summary view to see what is in the data and if the data quality issues have been addressed and corrected. Then all continuous variables would be viewed using a histogram and box plot to see the distributions. All Categorical variables would be viewed using a bar graph to view the distributions. There are several relationships that can also be explored such as:
+  * teams vs. age
+  * teams vs. runs batted in
+  * teams vs. runs
+  * teams vs. games
+  * teams vs. hits
+  * teams vs. at.bat
+  * teams vs. bat
+  * teams vs. salary
+  * teams vs. career length
+  * teams vs. weight
+  * teams vs. height
+  * height vs. weight
+  * games vs. salary
+  * age vs. salary
+  * hits vs. salary
+  * runs vs. salary
+  * runs batted in vs. salary
+  * career length vs. salary
+  
+### These questions can be extremely useful in exploring which of our data variables have a relationship.
+
+## 2.2 EDA and summary of results  
+
+```{r}
+summary(my2teams.df)
+```
+*So far, all the data quality issues have been cleared up and  that there are a few continuous variables that can be plotted with histograms and box plots (Game, Hits , Runs, At Bat, Runs Batted In, weight, height, salary, career length, and age). There are also a few discrete variables such as team.id, bats, and hit.ind that can be visualized using bar graphs. *
+
+### Continuous Variables
+
+#### G-Games
+```{r}
+ggplot(data=my2teams.df, aes(x=G))+geom_histogram(bins=20)+theme_classic()
+```
+* Histogram of games where there are 20 bins to illustrate the spread of the data. The distribution of values is skewed left with a probable bimodal distribution due to a slight peak at around 100 games
+
+#### R-Runs
+```{r}
+ggplot(data=my2teams.df, aes(x=R))+geom_histogram(bins=10)+theme_classic()
+```
+* Histogram of Runs where there are 10 bins to illustrate the spread of the data. The distribution of values is skewed left with a unimodal distribution
+
+#### H-Hits
+```{r}
+ggplot(data=my2teams.df, aes(x=H))+geom_histogram(bins=10)+theme_classic()
+```
+* Histogram of Hits where there are 10 bins to illustrate the spread of the data. The distribution of values is skewed left with a probable bimodal distribution due to the slight peak at around 85 hits
+
+#### AB- At.Bat
+```{r}
+ggplot(data=my2teams.df, aes(x=AB))+geom_histogram(bins=10)+theme_classic()
+```
+* Histogram of Runs where there are 10 bins to illustrate the spread of the data. The distribution of values is skewed left with a unimodal distribution.
+
+#### RBI-Runs Batted In
+```{r}
+ggplot(data=my2teams.df, aes(x=RBI))+geom_histogram(bins=10)+theme_classic()
+```
+* Histogram of Runs Batted In where there are 10 bins to illustrate the spread of the data. The distribution of values is skewed left with a unimodal distribution
+
+#### Weight
+```{r}
+ggplot(data=my2teams.df, aes(x=weight))+geom_histogram(bins=20)+theme_classic()
+```
+* Histogram of Weights where there are 20 bins to illustrate the spread of the data. There is a unimodal distribution of values.
+```{r}
+#let's see the numerical distribution of the weight spread
+ggplot(data=my2teams.df, aes(x=weight))+geom_boxplot()+theme_classic()
+```
+* Boxplot of Weights illustrates the numerical spread of the data with two outliers. We can see that the mean is around 210 pounds with greater spread in the upper quartile.
+
+#### Height
+```{r}
+ggplot(data=my2teams.df, aes(x=height))+geom_histogram(bins=20)+theme_classic()
+```
+* Histogram of Heights where there are 20 bins to illustrate the spread of the data. There is a unimodal distribution of values.
+```{r}
+#let's see the numerical distribution of the Height spread
+ggplot(data=my2teams.df, aes(x=height))+geom_boxplot()+theme_classic()
+```
+* Boxplot of Heights illustrates the numerical spread of the data with one outlier. We can see that the mean is around 73 inches with greater spread in the upper quartile.
+
+#### Salary
+```{r}
+ggplot(data=my2teams.df, aes(x=salary))+geom_histogram(bins=10)+theme_classic()
+```
+* Histogram of Salary where there are 10 bins to illustrate the spread of the data. The distribution of values is skewed left with a unimodal distribution.
+```{r}
+#let's see the numerical distribution of the salary spread
+ggplot(data=my2teams.df, aes(x=salary))+geom_boxplot()+theme_classic()
+```
+* Boxplot of Weights illustrates the numerical spread of the data with two outliers. We can see that the mean is inbetween 0 and 5,000,000 with greater spread in the upper quartile
+
+#### Career Length
+```{r}
+ggplot(data=my2teams.df, aes(x=career.length))+geom_histogram(bins=20)+theme_classic()
+```
+* Histogram of Career Length where there are 20 bins to illustrate the spread of the data. The distribution of values is skewed left with a probable bimodal distribution due to the slight peak at around 35 years mark.
+
+#### Age
+```{r}
+ggplot(data=my2teams.df, aes(x=age))+geom_histogram(bins=10)+theme_classic()
+```
+* Histogram of Age where there are 10 bins to illustrate the spread of the data. The distribution of values is skewed left with a unimodal distribution. 
+
+### Categorical Variables
+
+#### Team- teamID.x
+```{r}
+ggplot(data = my2teams.df, aes(x=teamID.x))+geom_bar()+theme_classic()
+```
+* Bar Graph of Team Id shows the frequency of how many players are in team KCA(37) and how many are in team NYN(40)
+
+#### Bat Hand- Bats
+```{r}
+ggplot(data = my2teams.df, aes(x=bats))+geom_bar()+theme_classic()
+```
+* Bar Graph of Bat shows the frequency of how many players bat with their left hand(), right hand (49), or both hands (5)
+
+#### Hit Index- hit.ind
+```{r}
+ggplot(data = my2teams.df, aes(x=hit.ind))+geom_bar()+theme_classic()
+```
+* Bar Graph of Hit Index shows the frequency of how many players have made no hits this season (29) and how many have made at least one hit(48)
+
+### Multivariate visualisations
+
+*The comparison between the two teams should provide some relationship on which team performs better, however comparison between salary would also illustrate which player performs better as it relates to the research question. Now since teams is a categorical variable, and majority of the other variables are continuous either the geom_boxplot, geom_jitter or geom_violin will be used to accurately visualize the data. All functions are found in the ggplot2 package (Bauer,2020). For the comparisons of the salaries, scatterplots and stacked bar graphs and violin plots will be used*
+
+#### teams vs. age
+```{r}
+ggplot(data = my2teams.df, aes(x=teamID.x, y=age)) + geom_boxplot() + theme_classic()
+```
+* The mean age between the two teams are similary with the NYN having a larger first quartile and the KCA having a larger thrid quartile. There is also one outlier for NYN as the most senior member of the team. 
+
+#### teams vs. runs batted in
+```{r}
+ggplot(data = my2teams.df, aes(x=teamID.x, y=RBI)) + geom_jitter() + theme_classic()
+```
+KCA has a more scattered amount of players that have runs that are batted in than NYN but they also have players with higher runs batted in. 
+
+#### teams vs. runs
+```{r}
+ggplot(data = my2teams.df, aes(x=teamID.x, y=R)) + geom_violin() + theme_classic()
+```
+NYN has more players that have not had a run based on the concentration at the base of the graph compared to KCA. KCA also have a thicker top portion than NYN suggesting that are more players in KCA that have hit high amounts of runs. 
+#### teams vs. games
+```{r}
+ggplot(data = my2teams.df, aes(x=teamID.x, y=G)) + geom_violin() + theme_classic()
+```
+KCA has a more rounded graph compared to NYN suggesting that there are an even number of players playing a range of games. NYN however has a large bottom suggesting that a lot of their players have played around 30 games but also a lot of their players have played around 120 games
+
+#### teams vs. hits
+```{r}
+ggplot(data = my2teams.df, aes(x=teamID.x, y=H)) + geom_jitter() + theme_classic()
+```
+NYN has more players scattered around the bottom suggesting that there is a bigger proportion of players who havent made a hit as compared to KCA. Both teams also have players who have high numbers of hits.
+
+#### teams vs. at.bat
+```{r}
+ggplot(data = my2teams.df, aes(x=teamID.x, y=AB)) + geom_jitter() + theme_classic()
+```
+There is more points in the tops and bottoms of KCA compared to NYN suggesting more players have more at.bats at KCA or none at all compared to NYN. However NYN's at.bats are more scattered at the bottom suggesting that most players have not reached the highest amount of at bats yet.
+
+#### teams vs. bat
+
+*As both teams and bats are categorical, the best way to visualise the relationship would be using a stacked bar graph (Kobacoff, 2020)*
+
+```{r}
+ggplot(data = my2teams.df, aes(x=teamID.x, fill=bats)) + geom_bar(position = "stack") + theme_classic()
+```
+Majority of both teams have right-handed batsman, however NYN has more left-handed batsman and KCA has more ambidextorous batsman.
+
+#### teams vs. salary
+```{r}
+ggplot(data = my2teams.df, aes(x=teamID.x, y=salary)) + geom_violin() + theme_classic()
+```
+NYN's salary is higher however there are more players at the bottom of the graph as compared to KCA who even though they have smaller salaries, the variable is spread out more evenly. 
+
+#### teams vs. career length
+```{r}
+ggplot(data = my2teams.df, aes(x=teamID.x, y=career.length)) + geom_violin() + theme_classic()
+```
+NYN has a player with the longest career length but also more players compared to KCA who are just starting out their careers.
+
+#### teams vs. weight
+```{r}
+ggplot(data = my2teams.df, aes(x=teamID.x, y=weight)) + geom_jitter() + theme_classic()
+```
+The weight between the two teams are evenly scattered however NYN does have an outlier.
+
+#### teams vs. height
+```{r}
+ggplot(data = my2teams.df, aes(x=teamID.x, y=height)) + geom_jitter() + theme_classic()
+```
+The height between the two teams are evenly scattered however KCA does have an outlier.
+
+#### teams vs. hit.index
+```{r}
+ggplot(data = my2teams.df, aes(x=teamID.x, fill=hit.ind)) + geom_bar(position = "stack") + theme_classic()
+```
+NYN has more players who have had atleast one hit as compared to KCA.
+
+### *Now for all the relationships between different variables and salaries*
+
+#### Games vs. salary
+```{r}
+ggplot(data = my2teams.df, aes(x=G, y=salary)) + geom_point() + theme_classic()
+```
+There does not appear to be a defininative straigh line that indicates more games correlating with higher pay. However, there does seem to be two outliers that aren't within the ranges of the rest of the other players. More investigations will be needed in question 3. 
+
+#### Age vs. salary
+```{r}
+ggplot(data = my2teams.df, aes(x=age, y=salary)) + geom_point() + theme_classic()
+```
+There seems to be an positive correlation between age and salary however there are still players who don't have a higher salary even though they are older. There also seem to be two outliers which will need exploration.
+
+#### Hits vs. salary
+```{r}
+ggplot(data = my2teams.df, aes(x=H, y=salary)) + geom_point() + theme_classic()
+```
+There seem to be no correlation between number of hits and salary. There is one outlier. 
+
+#### Runs vs. salary
+```{r}
+ggplot(data = my2teams.df, aes(x=R, y=salary)) + geom_point() + theme_classic()
+```
+There appears to be a very slight positive correlation between Runs and salary. There are two outliers.
+
+#### Runs batted in vs. salary
+```{r}
+ggplot(data = my2teams.df, aes(x=RBI, y=salary)) + geom_point() + theme_classic()
+```
+There appears to be no correlation between Runs batted in and salary. There are two outliers.
+
+#### At.bat vs. salary
+```{r}
+ggplot(data = my2teams.df, aes(x=AB, y=salary)) + geom_point() + theme_classic()
+```
+There appears to be no correlation between at bats and salary. There are two outliers.
+
+#### Career length vs. salary
+```{r}
+ggplot(data = my2teams.df, aes(x=career.length, y=salary)) + geom_point() + theme_classic()
+```
+There appears to be a postiive correlation between career length and salary. There are three outliers.
+
+#### Salary vs. hit.index
+```{r}
+ggplot(data = my2teams.df, aes(x=hit.ind, y=salary)) + geom_violin() + theme_classic()
+```
+It appears that players who have at least one or more hits are payed higher than players who dont have any hits.
+
+## 2.3 Additional insights and issues
+
+#### height vs. weight
+```{r}
+ggplot(data = my2teams.df, aes(x=weight, y=height)) + geom_point() + theme_classic()
+```
+It appears that an increase in height also leads to an increae in weight. There are two definative outliers on the extremes of both variables. 
+
+#### hit.index vs. games
+```{r}
+ggplot(data = my2teams.df, aes(x=hit.ind, y=G)) + geom_violin() + theme_classic()
+```
+More players who havent played a game are correlated to not having atleast one hit. Whereas players who have played more games are correlated to have made atleast one hit.
+
+#### Runs Batted in  vs. games
+```{r}
+ggplot(data = my2teams.df, aes(x=RBI, y=G)) + geom_point() + theme_classic()
+```
+There is a positve correaltion with runs batted in and more games played. 
+
+#### hit.index vs. Runs Batted In
+```{r}
+ggplot(data = my2teams.df, aes(x=hit.ind, y=RBI)) + geom_jitter() + theme_classic()
+```
+The more runs a player batted in, it correlated them to having atleast one hit. 
+
+
+# 3. Modelling
+
+## 3.1 Build a model for player salary
+
+#### Due to the research question "target attribute of the salary", it seems to build a model based on the relationships of the different variables and how it contributes to the salary. Thus, a regression model would need to be built to elucidate the relationships between our different variables and salary. Using the continuous variables such as games (G), runs (R), Runs Batted In (RBI), At.Bats(A.B), weight, height, age, and career length (career.length) as explanatory variables and salary as our continuous numeric dependent variable,a multiple regression model would be created to see  if there a relationship between these variables and amount of salary a player generates.   
+
+*H0= there is no significant relationship between the explanatory variables and salary*  
+*H1= there is a significant relationship and accountable variance between the explanatory variables and salary*   
+
+#### Let's create the model
+```{r}
+salary1.lm <- lm( my2teams.df$salary ~ my2teams.df$G  + my2teams.df$R + my2teams.df$H + my2teams.df$AB + my2teams.df$RBI + my2teams.df$weight + my2teams.df$height + my2teams.df$age + my2teams.df$age  )
+
+summary(salary1.lm)
+plot(salary1.lm)
+```
+#### R-squared of 0.3182, meaning approximately 31.8% of variation in salary can be explained by our model. F(8,68)=3.967, p = 0.000667, meaning the model is significant as the p-value is less than the alpha value of 0.05. This also suggests that one of the predictor varaibles can be related to the outcome variable significantly. It can be seen that only the age is significant with the height variable being the closest than all the other variables towards the acceptable p-value of 0.05. As this model is very big, it is not adequate enough as there is too much going on and lots of insignificant variables. There is a need to use a minimally adequate model to gain the most appropriate results
+
+**RBI is not significant at all so lets remove**
+```{r}
+salary2.lm<-update(salary1.lm, ~.- my2teams.df$RBI)
+summary(salary2.lm)
+```
+
+**Weight is not significant at all so lets remove**
+```{r}
+salary3.lm<-update(salary2.lm, ~.- my2teams.df$weight)
+summary(salary3.lm)
+```
+
+**At.Bats is not significant at all so lets remove**
+```{r}
+salary4.lm<-update(salary3.lm, ~.- my2teams.df$AB)
+summary(salary4.lm)
+```
+
+**Hits is not significant at all so lets remove**
+```{r}
+salary5.lm<-update(salary4.lm, ~.- my2teams.df$H)
+summary(salary5.lm)
+```
+
+**Games is not significant at all so lets remove**
+```{r}
+salary6.lm<-update(salary5.lm, ~.- my2teams.df$G)
+summary(salary6.lm)
+```
+
+**Height is marginally significant however it still doesn't reach the alpha value so lets remove**
+```{r}
+salary7.lm<-update(salary6.lm, ~.- my2teams.df$height)
+summary(salary7.lm)
+```
+
+#### The overall model is significant with all the factors being significant, therefore becoming the minimally adequate model. Let's check that through the step function, the same results are returned. 
+
+-----------------------------------------------------------------------------------
+#### Using AIC method
+
+```{r}
+step(salary1.lm)
+```
+
+*There is a minimally adequate model available with an AIC of 2322.78*
+
+```{r}
+salary8.lm <- lm(formula = my2teams.df$salary ~ my2teams.df$R + my2teams.df$height + 
+    my2teams.df$age)
+summary(salary8.lm)
+```
+
+#### As per what the summary shows, height is not significant so lets remove to make it the minimally adequate model 
+
+```{r}
+salary9.lm<-update(salary8.lm, ~.- my2teams.df$height)
+summary(salary9.lm)
+```
+
+#### The overall model is significant with significant values. Let's compare with the long-hand version
+
+```{r}
+salary7.lm<-update(salary6.lm, ~.- my2teams.df$height)
+summary(salary7.lm)
+```
+#### Both models reproduce the same amount therefore suggesting that Model 7/9 is the most appropriate model. From now on, model 7 (salary7.lm) will be used to do any analysis and diagnostics
+
+## 3.2 Critique model using relevant diagnostics
+
+```{r}
+summary(salary7.lm)
+plot(salary7.lm)
+```
+
+####  The model's F statistic,F(2,74)= 13.74, p=8.401e-06 or p<0.01, means the overall model is significan which suggests that one of the predictor variables can be significant in relation with the outcome variable. The R2 represents the variance in the model that can be attributed to the predictor variables. With the adjusted R-squared value, 25.11% of the model's variance can be attributed to the predictor variables.Looking at the coefficients, the t-statistics between runs and salary (t=3.348), and age and salary (t=4.317) are significant with p-values of 0.00175 and 4.84e-05 respectively. In every point of increase with runs a player makes, the individual recieves an increase in his salary by $45,262 on average. In every increased point of age a player reaches, the individual is estimated to recieve $466,620 increase in their salary on average. This is the writen model equation:
+
+**salary = -10837514 + (45262 x runs) + (466620 x age)**
+
+#### The residual standard error measures the error in the predictions.
+```{r}
+sigma(salary7.lm) / mean(my2teams.df$salary)
+```
+#### The RSE is 3519000 corresponding to an error rate of 89.92%. This suggestst that there is an 89.92% chance that this model does't encompass $3519000. That means there is a large error in the model. 
+
+#### In the analysis of the plots, it can be seen that for the QQ plot, points approximately fall on line however a few outliers are visible in the graph. It also can be seen that on the right hand side of the graph, the points are slightly above the line suggesting that these values are larger under the CDF for the standardised residuals than it is under a normal distribution, suggesting a skewness of the dataset (The QQ Plot in Linear Regression - Boostedml, 2019). For the Residual vs. Fitted plot, the linearity seems to be holding well as the red line is close to the dashed line, however it could drift to a quadratic relationship. Points 64, 26, and 12 may be outliers with large residual values. And there is also heteroskedasticity as the spread of residuals are increasing on the right of the x-axis. For Residuals vs. Leverage Plot, the spread of the standardised residuals changes as the leverage changes. The spread appears to decrease indicating heteroskedasticity. There are also a few outliers such as values 2, 27 and 64.For the scale location plot, there is some non-linearity as the line is not horizontal. There is also evidence of heteroskedasticity as the values spread out more along the right. Outliers include 12, 26, and 64. Overall there is a skewness of the dataset with a lot of spread of the variance on the right. Point 64 is an outlier as well as points 12, 26, and 27. 
+
+## 3.3 Suggest improvements to your model
+
+#### Given how large the error is within the model, the outliers and the heteroskedasticity of the spread, a few improvements can be suggested that would result in a more uniform and powerful model. Firstly, a suggestion would be to get rid of the outlier points. Comparing the plots of model 1 and model 7, both sets of plots suggest that points 26,27, and 64 are outliers. Thereby removing these plots of the model, there may be more of a normal distribution in the model. Another would be to see if this model would be more suited to a generalized linear model, polynomial regression model or even a logistic regression. Through comparison, any of those models would result in a greater adjusted r-squared value resulting in more of the variance being accounted for by the model. Transformation of the outcome variable into a log function may normalize the distribution of the model and increase the variance attributed to the model. 
+
+# 4. Extension work
+
+## 4.1 Model the likelihood of a player having scored a Hit (using the hit.ind variable provided).
+
+#### The research question asks what is the likelihood of a player having scored at least one hit. Since the outcome variable, hit.ind, is a binary variable with 0 coding for no hits and 1 coding for at least one hit, logistic regression would be needed for this model. The explanatory variables that have an effect on the outcome variable would be salary, games, runs batted in, hits, runs, at.bats, and career.length
+
+```{r}
+hitindex.lr <- glm(my2teams.df$hit.ind ~  my2teams.df$G + my2teams.df$RBI + 
+    my2teams.df$H + my2teams.df$AB + my2teams.df$R + my2teams.df$career.length, data = my2teams.df, family = "binomial")
+
+summary(hitindex.lr)
+```
+#### Unfortunately, the overall model to see if there is any likelihood to predict whether a player has scored at least one hit is not significant. This might be due to the data being a real data set and nothing definitive can predict whether the likelihood of predicting whether the player has made at least one hit. 
+
+
+# References  
+
+Bauer, P., 2020. 5.5 Numeric Vs. Categorical: Various Plot Types | GESIS Workshop: Applied Data Visualization. [online] Bookdown.org. Available at: <https://bookdown.org/paul/applied-data-visualization/numeric-vs-categorical-various-plot-types.html> [Accessed 2 January 2021].
+
+Kabacoff, R., 2020. Data Visualization With R. [online] Rkabacoff.github.io. Available at: <https://rkabacoff.github.io/datavis/Bivariate.html> [Accessed 2 January 2021].
+
+Boostedml. 2019. The QQ Plot In Linear Regression - Boostedml. [online] Available at: <https://boostedml.com/2019/03/linear-regression-plots-how-to-read-a-qq-plot.html> [Accessed 4 January 2021].
