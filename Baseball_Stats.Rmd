@@ -1,16 +1,7 @@
----
-title: "CS5801 Coursework "
-author: "2045939"
-date: "`r format(Sys.time(), '%d %B, %Y')`"
-output: html_notebook
-version: 1.0
----
+
 
 # 0. Instructions 
 ```{r}
-# Add code here to load any required libraries with `library()`.  
-# We suggest you use `install.package()` for any required packages externally to this document 
-# since installation only need be done once.
 library(ggplot2)
 library(tidyverse)
 ```
